@@ -65,7 +65,7 @@ export const ContactMenuMobile = () => {
           </a>
 
           <div className="h-[10vh] w-full bg-first flex justify-center p-4">
-            <a href="https://6tpgds-3000.csb.app/">
+            <a href="https://6tpgds-3000.csb.app/" target="_blank">
               <img src="/src/assets/portfolio-logo.png" className=" h-full text-second" />
             </a>
           </div>

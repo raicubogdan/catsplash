@@ -1,10 +1,11 @@
 import {
   useState,
-  useCallback,
   useContext,
   Dispatch,
   SetStateAction,
   createContext,
+  useRef,
+  RefObject,
 } from 'react'
 import { Image, Images } from './types'
 import { likeImage, deleteImage, fetchImageFromApi, addTag } from './utils'
@@ -12,6 +13,7 @@ import { FaHeart, FaTrash, FaLongArrowAltUp, FaPaw } from 'react-icons/fa'
 import { Modal } from '../../components/Modal'
 import { IoCloseOutline } from 'react-icons/io5'
 import { GiPawHeart } from 'react-icons/gi'
+import { useMediaMatch } from 'rooks'
 
 export const CatGrid = () => {
   const [isModalVisible, setIsModalVisible] = useState(false)
@@ -27,6 +29,12 @@ export const CatGrid = () => {
 
   const imagesArray = Object.values(images)
 
+  const filterSelectRef = useRef<HTMLSelectElement>(null)
+
+  const storageImages: Image[] = Object.values(
+    JSON.parse(localStorage.getItem('images') || '[]')
+  )
+
   return (
     <div className="max-w-[1200px] w-full flex flex-col gap-4 items-center">
       {isError ? (
@@ -35,13 +43,7 @@ export const CatGrid = () => {
         </div>
       ) : null}
 
-      <button
-        className="w-fit disabled:opacity-25 bg-second font-bold py-2 px-4 rounded"
-        disabled={isLoading}
-        onClick={() => fetchImageFromApi({ setImages, setIsLoading, setIsError })}
-      >
-        <p className="text-third w-fit">{isLoading ? 'Loading cat...' : 'get cat'}</p>
-      </button>
+      <CatGridButtons filterSelectRef={filterSelectRef} />
 
       <Context.Provider
         value={{
@@ -52,23 +54,30 @@ export const CatGrid = () => {
           selectedImageId,
           setSelectedImageId,
           setIsModalVisible,
+          isLoading,
+          setIsError,
+          setIsLoading,
         }}
       >
         {imagesArray.length ? (
-          <div className="flex-grow w-full h-full py-4 columns-1 md:columns-2 lg:columns-3 ">
+          <div className="flex-grow w-full h-full py-4 columns-1 md:columns-2 lg:columns-3">
             {imagesArray.map((image) => (
               <Card key={image.id} image={image} />
             ))}
           </div>
         ) : (
-          <div className="w-full h-ful flex flex-col flex-grow items-center pt-5 gap-16">
+          <div className="w-full h-ful flex flex-col flex-grow items-center pt-5 gap-8 lg:gap-16">
             <FaLongArrowAltUp className="text-second w-20 h-20" />
             <FaPaw className="text-third w-20 h-20" />
-            <p className="text-varela text-second text-3xl">
-              {"let's get some cats first"}
+
+            <p className="text-varela text-second text-xl lg:text-3xl">
+              {storageImages.length
+                ? 'no cats found for this filter'
+                : "let's get some cats first"}
             </p>
           </div>
         )}
+
         <Modal isVisible={isModalVisible}>
           <Tags />
         </Modal>
@@ -77,45 +86,196 @@ export const CatGrid = () => {
   )
 }
 
-const Card = ({ image }: { image: Image }) => {
-  const { setImages } = useContext(Context)
+const CatGridButtons = ({
+  filterSelectRef,
+}: {
+  filterSelectRef: RefObject<HTMLSelectElement>
+}) => {
+  const { setImages, setIsLoading, isLoading, setIsError, tags } = useContext(Context)
 
-  const handleLikeImage = useCallback(
-    () => likeImage({ id: image.id, setImages }),
-    [image.id, setImages]
+  return (
+    <div className="flex flex-col items-center gap-2 lg:pt-0 pt-8">
+      <button
+        className="w-fit disabled:opacity-25 bg-second font-bold py-1 px-2 rounded"
+        disabled={isLoading}
+        onClick={() => {
+          fetchImageFromApi({ setImages, setIsLoading, setIsError })
+
+          if (filterSelectRef.current) {
+            filterSelectRef.current.value = 'filter by tag'
+          }
+        }}
+      >
+        <p className="text-third w-fit">{isLoading ? 'Loading...' : 'get cat'}</p>
+      </button>
+
+      <div className="flex gap-2">
+        <button
+          className="w-fit disabled:opacity-25 bg-second font-bold py-1 px-2 rounded"
+          disabled={isLoading}
+          onClick={() =>
+            setImages(() => {
+              const storageImages: Image[] = Object.values(
+                JSON.parse(localStorage.getItem('images') || '[]')
+              )
+
+              const filteredArray = storageImages.filter((image: Image) => image.isLiked)
+
+              if (filterSelectRef.current) {
+                filterSelectRef.current.value = 'filter by tag'
+              }
+
+              return filteredArray.reduce((acc, image) => {
+                acc[image.id] = image
+                return acc
+              }, {} as Images)
+            })
+          }
+        >
+          <p className="text-third w-fit">liked</p>
+        </button>
+
+        <button
+          className="w-fit disabled:opacity-25 bg-second font-bold py-1 px-2 rounded"
+          disabled={isLoading}
+          onClick={() => {
+            setImages(JSON.parse(localStorage.getItem('images') || '[]'))
+
+            if (filterSelectRef.current) {
+              filterSelectRef.current.value = 'filter by tag'
+            }
+          }}
+        >
+          <p className="text-third w-fit">all</p>
+        </button>
+
+        <select
+          ref={filterSelectRef}
+          onChange={(e) => {
+            const storageItems: Images = JSON.parse(
+              localStorage.getItem('images') || '[]'
+            )
+
+            setImages(() => {
+              const selectedTag = e.target.value
+              if (selectedTag === 'filter by tag') {
+                return JSON.parse(localStorage.getItem('images') || '[]')
+              }
+              const filteredArray = Object.values(storageItems).filter((image) =>
+                image.tags.includes(selectedTag)
+              )
+
+              const filteredImages = filteredArray.reduce((acc, image) => {
+                acc[image.id] = image
+                return acc
+              }, {} as Images)
+
+              return filteredImages
+            })
+          }}
+        >
+          <option>filter by tag</option>
+          {tags.map((tag) => (
+            <option key={tag}>{tag}</option>
+          ))}
+        </select>
+      </div>
+    </div>
   )
-  const handleDeleteImage = useCallback(
-    () => deleteImage({ id: image.id, setImages }),
-    [image.id, setImages]
-  )
+}
+
+const Card = ({ image }: { image: Image }) => {
+  const [isLoaded, setIsLoaded] = useState(false)
+
+  const isLargeDisplay = useMediaMatch('(min-width: 760px)')
 
   return (
     <>
-      <div className="relative mb-4 rounded-lg">
-        <div className="opacity-0 hover:opacity-100 flex absolute flex-col h-full w-full gap-2 justify-between">
-          <div className="flex w-fit gap-2 m-2">
-            <button className="p-2 bg-gray-200 rounded" onClick={handleLikeImage}>
-              <FaHeart
-                className={`${image.isLiked ? 'text-red-600' : 'text-gray-600'}`}
-              />
-            </button>
+      <div className={`relative ${isLoaded ? 'mb-8 lg:mb-4' : ''}`}>
+        {isLargeDisplay && isLoaded ? <CardOverlay image={image} /> : null}
 
-            <button className="p-2 bg-gray-200 rounded" onClick={handleDeleteImage}>
-              <FaTrash className="text-gray-700" />
-            </button>
-          </div>
+        <div>
+          <img
+            className="w-full h-full lg:rounded-lg rounded-t-lg"
+            src={image?.url}
+            alt="cat"
+            onLoad={() => {
+              setIsLoaded(true)
+            }}
+          />
 
-          <OnImageTags image={image} />
+          {!isLoaded ? <p className="h-32 text-white py-6">image is loading...</p> : ''}
         </div>
 
-        <img className="w-full h-full rounded-lg" src={image?.url} alt="cat" />
+        {!isLargeDisplay && isLoaded ? <CardButtons image={image} /> : null}
       </div>
     </>
   )
 }
 
+const CardOverlay = ({ image }: { image: Image }) => {
+  const { setImages } = useContext(Context)
+
+  return (
+    <div className="opacity-0 hover:opacity-100 flex absolute flex-col h-full w-full gap-2 justify-between">
+      <div className="flex w-fit gap-2 m-2">
+        <button
+          className="p-2 bg-gray-200 rounded"
+          onClick={() => likeImage({ id: image.id, setImages })}
+        >
+          <FaHeart className={`${image.isLiked ? 'text-red-600' : 'text-gray-600'}`} />
+        </button>
+
+        <button
+          className="p-2 bg-gray-200 rounded"
+          onClick={() => deleteImage({ id: image.id, setImages })}
+        >
+          <FaTrash className="text-gray-700" />
+        </button>
+      </div>
+
+      <OnImageTags image={image} />
+    </div>
+  )
+}
+
+const CardButtons = ({ image }: { image: Image }) => {
+  const { setImages, setIsModalVisible, setSelectedImageId } = useContext(Context)
+
+  return (
+    <div className="w-full py-2 h-12 flex gap-2">
+      <button
+        className="p-2 h-full bg-gray-200 rounded"
+        onClick={() => likeImage({ id: image.id, setImages })}
+      >
+        <FaHeart className={`${image.isLiked ? 'text-red-600' : 'text-gray-600'}`} />
+      </button>
+
+      <button
+        className="p-2 h-full bg-gray-200 rounded"
+        onClick={() => deleteImage({ id: image.id, setImages })}
+      >
+        <FaTrash className="text-gray-700" />
+      </button>
+
+      <div className="self-end h-full">
+        <button
+          className="h-full px-2 text-xs bg-gradient-to-r border-2 border-second from-purple-800 to-purple-600 text-second font-bold rounded cursor-pointer"
+          onClick={() => {
+            setIsModalVisible((prev) => !prev)
+            setSelectedImageId(image.id)
+          }}
+        >
+          TAGS
+        </button>
+      </div>
+    </div>
+  )
+}
+
 const Tags = () => {
   const [inputValue, setInputValue] = useState('')
+  const [error, setError] = useState('')
 
   const { setImages, setIsModalVisible, selectedImageId, images, tags, setTags } =
     useContext(Context)
@@ -124,27 +284,43 @@ const Tags = () => {
 
   const image = images[selectedImageId]
 
+  if (!image) return null
+
   const handleAddTagToImage = (tag: string) => {
+    const storageItems: Images = JSON.parse(localStorage.getItem('images') || '[]')
+
     setImages((prevImages) => {
       const updatedImages = { ...prevImages }
+
       updatedImages[image.id].tags = !updatedImages[image.id].tags.includes(tag)
         ? [...updatedImages[image.id].tags, tag]
         : updatedImages[image.id].tags
 
-      localStorage.setItem('images', JSON.stringify(updatedImages))
+      localStorage.setItem(
+        'images',
+        JSON.stringify({ ...storageItems, [image.id]: updatedImages[image.id] })
+      )
 
       return updatedImages
     })
   }
 
   const handleRemoveTagFromImage = (tag: string) => {
+    const storageItems: Images = JSON.parse(localStorage.getItem('images') || '[]')
+
     setImages((prevImages) => {
+      console.log('storageItems', storageItems)
       const updatedImages = { ...prevImages }
+
       updatedImages[image.id].tags = updatedImages[image.id].tags.filter(
         (imageTag) => imageTag !== tag
       )
 
-      localStorage.setItem('images', JSON.stringify(updatedImages))
+      localStorage.setItem(
+        'images',
+        JSON.stringify({ ...storageItems, [image.id]: updatedImages[image.id] })
+      )
+
       return updatedImages
     })
   }
@@ -152,12 +328,19 @@ const Tags = () => {
   const handleAddNewTag = () => {
     const trimmedValue = inputValue.trim()
 
+    if (trimmedValue.length > 8) {
+      setError('Limit exceeded (8 chars)')
+      return
+    }
+
     if (trimmedValue) {
       addTag({
         tag: inputValue,
         setTags,
       })
     }
+
+    setError('')
 
     setInputValue('')
   }
@@ -177,6 +360,7 @@ const Tags = () => {
         <div className="flex flex-col gap-4 px-2 border-t-2 border-b-gray-400">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-2 py-2">
             <p className="text-2xl">Available tags</p>
+            {error ? <p className="text-red-700">{error}</p> : null}
 
             <div className="flex w-full lg:w-auto flex-col lg:flex-row gap-2 items-end">
               <input
@@ -204,7 +388,9 @@ const Tags = () => {
                   .map((tag) => (
                     <button
                       className="w-fit p-1 px-2 text-sm bg-gray-400 text-white rounded cursor-pointer"
-                      onClick={() => handleAddTagToImage(tag)}
+                      onClick={() => {
+                        handleAddTagToImage(tag)
+                      }}
                       key={`all-${tag}`}
                     >
                       <p>{tag}</p>
@@ -215,14 +401,17 @@ const Tags = () => {
         </div>
 
         <div className="flex flex-col  max-h-[10rem] gap-4 px-2 border-t-2 border-b-gray-400 py-2">
-          <p className="text-2xl">Applied tags</p>
+          <p className="text-2xl">Image tags</p>
 
           <div className="w-full flex flex-wrap gap-2 overflow-y-scroll max-h-[8rem]">
             {image.tags.length
               ? image.tags.map((tag) => (
                   <button
                     className="w-fit p-1 px-2 text-sm bg-gray-400 text-white rounded"
-                    onClick={() => handleRemoveTagFromImage(tag)}
+                    onClick={() => {
+                      handleRemoveTagFromImage(tag)
+                      console.log('removes')
+                    }}
                     key={`image-${tag}`}
                   >
                     <p>{tag}</p>
@@ -239,6 +428,8 @@ const Tags = () => {
 const OnImageTags = ({ image }: { image: Image }) => {
   const numberOfDisplayedTags = 5
 
+  const isWideScreen = useMediaMatch('(min-width: 1024px)')
+
   const { setSelectedImageId, setIsModalVisible, setImages } = useContext(Context)
 
   return (
@@ -246,7 +437,6 @@ const OnImageTags = ({ image }: { image: Image }) => {
       <button
         className="p-1 px-2 text-xs bg-gradient-to-r border-2 border-second from-purple-800 to-purple-600 text-second font-bold rounded cursor-pointer"
         onClick={(e) => {
-          e.stopPropagation()
           setIsModalVisible((prev) => !prev)
           setSelectedImageId(image.id)
         }}
@@ -258,17 +448,32 @@ const OnImageTags = ({ image }: { image: Image }) => {
         ? image.tags.slice(0, numberOfDisplayedTags).map((tag) => (
             <button
               key={`display-${tag}`}
-              className="hidden lg:block relative text-xs bg-gradient-to-r from-purple-800 to-purple-600 rounded-lg  text-white p-1 pr-6 pl-2"
+              className="relative text-xs bg-gradient-to-r from-purple-800 to-purple-600 rounded-lg  text-white p-1 pr-6 pl-2"
               onClick={() => {
-                setImages((prevImages) => {
-                  const updatedImages = { ...prevImages }
-                  updatedImages[image.id].tags = updatedImages[image.id].tags.filter(
-                    (imageTag) => imageTag !== tag
+                if (isWideScreen) {
+                  const storageImages: Images = JSON.parse(
+                    localStorage.getItem('images') || '[]'
                   )
 
-                  localStorage.setItem('images', JSON.stringify(updatedImages))
-                  return updatedImages
-                })
+                  setImages((prevImages) => {
+                    const updatedImages = { ...prevImages }
+                    updatedImages[image.id].tags = updatedImages[image.id].tags.filter(
+                      (imageTag) => imageTag !== tag
+                    )
+
+                    localStorage.setItem(
+                      'images',
+                      JSON.stringify({
+                        ...storageImages,
+                        [image.id]: updatedImages[image.id],
+                      })
+                    )
+                    return updatedImages
+                  })
+                } else {
+                  setSelectedImageId(image.id)
+                  setIsModalVisible(true)
+                }
               }}
             >
               {tag}
@@ -294,6 +499,9 @@ const Context = createContext<{
   selectedImageId: string | null
   setSelectedImageId: Dispatch<SetStateAction<string>>
   setIsModalVisible: Dispatch<SetStateAction<boolean>>
+  setIsLoading: Dispatch<SetStateAction<boolean>>
+  isLoading: boolean
+  setIsError: Dispatch<SetStateAction<boolean>>
 }>({
   images: {},
   setImages: () => [],
@@ -302,11 +510,14 @@ const Context = createContext<{
   selectedImageId: '',
   setSelectedImageId: () => '',
   setIsModalVisible: () => false,
+  setIsError: () => false,
+  isLoading: false,
+  setIsLoading: () => false,
 })
 
 export const Footer = () => {
   return (
-    <div className="bg-first h-[10vh] w-full mt-auto flex items-center justify-center  text-second font-bold text-sm lg:text-base">
+    <div className="bg-first h-[10vh] w-full mt-auto flex items-center justify-center text-second text-sm lg:text-base">
       <div className="whitespace-pre-line">
         made with
         {
