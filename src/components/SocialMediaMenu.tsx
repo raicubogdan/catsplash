@@ -3,7 +3,7 @@ import { FaGithubAlt, FaLinkedinIn } from 'react-icons/fa'
 import { IoCloseOutline } from 'react-icons/io5'
 import { RxHamburgerMenu } from 'react-icons/rx'
 
-export const ContactMenu = () => {
+export const SocialMediaMenu = () => {
   return (
     <div className="hidden lg:block top-20 left-0 fixed">
       <div className="flex flex-col">
@@ -23,7 +23,7 @@ export const ContactMenu = () => {
   )
 }
 
-export const ContactMenuMobile = () => {
+export const SocialMediaMenuMobile = () => {
   const [isMenuVisible, setIsMenuVisible] = useState(false)
 
   return (

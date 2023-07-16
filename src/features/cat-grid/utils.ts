@@ -19,7 +19,9 @@ export const fetchImageFromApi = ({
 
   console.log('fetching from api')
 
-  fetch('https://api.thecatapi.com/v1/images/search?format=json&limit=10')
+  fetch(
+    'https://api.thecatapi.com/v1/images/search?limit=1&mime_types=&order=Random&size=small&page=3&sub_id=demo-ce06ee'
+  )
     .then((res) => res.json())
     .then((data: Images) => {
       setImages(() => {
@@ -75,21 +77,5 @@ export const deleteImage = ({ id, setImages }: UtilityFn) => {
     }
 
     return updatedImages
-  })
-}
-
-export const addTag = ({
-  tag,
-  setTags,
-}: {
-  tag: string
-  setTags: Dispatch<SetStateAction<string[]>>
-}) => {
-  setTags((prev) => {
-    const updatedTags = !prev.includes(tag) ? [tag, ...prev] : prev
-
-    localStorage.setItem('tags', JSON.stringify(updatedTags))
-
-    return updatedTags
   })
 }

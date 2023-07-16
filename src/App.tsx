@@ -1,12 +1,13 @@
-import { ContactMenu, ContactMenuMobile } from './components/ContactMenu'
-import { CatGrid, Footer } from './features/cat-grid'
+import { Footer } from './components/Footer'
+import { SocialMediaMenu, SocialMediaMenuMobile } from './components/SocialMediaMenu'
+import { CatGrid } from './features/cat-grid'
 
 function App() {
   return (
     <>
       <div className="font-varela bg-first min-h-[100vh] flex flex-col items-center gap-10 px-4 lg:px-16 pb-10">
-        <ContactMenuMobile />
-        <ContactMenu />
+        <SocialMediaMenuMobile />
+        <SocialMediaMenu />
 
         <div className="flex flex-col gap-4 items-center">
           <h1 className="hidden lg:block lg:pt-6 text-second text-5xl">catsplash</h1>
