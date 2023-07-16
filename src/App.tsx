@@ -1,12 +1,24 @@
-import { CatGrid } from './features/cat-grid'
+import { ContactMenu, ContactMenuMobile } from './components/ContactMenu'
+import { CatGrid, Footer } from './features/cat-grid'
 
 function App() {
   return (
-    <div className="w-full flex flex-col min-h-[100vh] items-center gap-4 p-4 border-2 border-red-600">
-      <h1>catSPLASH</h1>
+    <>
+      <div className="bg-first min-h-[100vh] flex flex-col items-center gap-4 px-4 pb-20">
+        <ContactMenuMobile />
+        <ContactMenu />
 
-      <CatGrid />
-    </div>
+        <h1 className="hidden lg:block lg:pt-6 font-varela text-second text-5xl">
+          catsplash
+        </h1>
+
+        <h1 className="pt-16 lg:pt-0 font-varela text-second text-xs italic">{`(unsplash but with cats. don't worry, they won't run away after refresh)`}</h1>
+
+        <CatGrid />
+      </div>
+
+      <Footer />
+    </>
   )
 }
 

@@ -24,8 +24,8 @@ export const fetchImageFromApi = ({
     .then((data: Images) => {
       setImages((prev) => {
         const updatedImages: Images = {
-          ...prev,
           [data[0].id]: { ...data[0], isLiked: false, tags: [] },
+          ...prev,
         }
 
         localStorage.setItem('images', JSON.stringify(updatedImages))
@@ -80,7 +80,7 @@ export const addTag = ({
   setTags: Dispatch<SetStateAction<string[]>>
 }) => {
   setTags((prev) => {
-    const updatedTags = !prev.includes(tag) ? [...prev, tag] : prev
+    const updatedTags = !prev.includes(tag) ? [tag, ...prev] : prev
 
     localStorage.setItem('tags', JSON.stringify(updatedTags))
 
