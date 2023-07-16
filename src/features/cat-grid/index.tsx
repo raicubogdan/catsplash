@@ -1,16 +1,22 @@
 import {
   useState,
+  useContext,
   Dispatch,
   SetStateAction,
-  useCallback,
   createContext,
-  useContext,
+  useRef,
+  RefObject,
 } from 'react'
-import { Modal } from '../../components/Modal'
 import { Image, Images } from './types'
-import { likeImage, deleteImage, fetchImageFromApi, addTag } from './utils'
+import { fetchImageFromApi } from './utils'
+import { FaLongArrowAltUp, FaPaw } from 'react-icons/fa'
+import { Modal } from '../../components/Modal'
+import { Tags } from '../../components/Tags'
+import { Card } from '../../components/Card'
 
 export const CatGrid = () => {
+  const [isModalVisible, setIsModalVisible] = useState(false)
+  const [selectedImageId, setSelectedImageId] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isError, setIsError] = useState(false)
   const [images, setImages] = useState<Images>(
@@ -20,190 +26,193 @@ export const CatGrid = () => {
     JSON.parse(localStorage.getItem('tags') || '[]')
   )
 
-  const imagesArray = Object.values(images)
+  const stateImagesArray = Object.values(images)
+
+  const filterSelectRef = useRef<HTMLSelectElement>(null)
+
+  const storageImages: Image[] = Object.values(
+    JSON.parse(localStorage.getItem('images') || '[]')
+  )
 
   return (
-    <>
-      {isError ? (
-        <div className="text-red-700">
-          Something went wrong! Contact the cat god for guidance
-        </div>
-      ) : null}
+    <Context.Provider
+      value={{
+        images,
+        setImages,
+        tags,
+        setTags,
+        selectedImageId,
+        setSelectedImageId,
+        setIsModalVisible,
+        isLoading,
+        setIsError,
+        setIsLoading,
+      }}
+    >
+      <div className="max-w-[1200px] w-full flex flex-col gap-4 items-center">
+        {isError ? (
+          <div className="text-red-700">
+            Something went wrong! Contact the cat god for guidance
+          </div>
+        ) : null}
 
+        <CatGridButtons filterSelectRef={filterSelectRef} />
+
+        {stateImagesArray.length ? (
+          <div className="flex-grow w-full h-full py-4 columns-1 md:columns-2 lg:columns-3">
+            {stateImagesArray.map((image) => (
+              <Card key={image.id} image={image} />
+            ))}
+          </div>
+        ) : (
+          <NoResultsFallback storageImages={storageImages} />
+        )}
+
+        {selectedImageId && (
+          <Modal isVisible={isModalVisible}>
+            <Tags />
+          </Modal>
+        )}
+      </div>
+    </Context.Provider>
+  )
+}
+
+const CatGridButtons = ({
+  filterSelectRef,
+}: {
+  filterSelectRef: RefObject<HTMLSelectElement>
+}) => {
+  const { setImages, setIsLoading, isLoading, setIsError, tags } = useContext(Context)
+
+  return (
+    <div className="flex flex-col items-center gap-2 lg:pt-0 pt-8">
       <button
-        className={`disabled:opacity-25 bg-blue-700 text-white font-bold py-2 px-4 rounded`}
+        className="w-fit disabled:opacity-25 bg-second font-bold py-1 px-2 rounded"
         disabled={isLoading}
-        onClick={() => fetchImageFromApi({ setImages, setIsLoading, setIsError })}
+        onClick={() => {
+          fetchImageFromApi({ setImages, setIsLoading, setIsError })
+
+          if (filterSelectRef.current) {
+            filterSelectRef.current.value = 'filter by tag'
+          }
+        }}
       >
-        {isLoading ? 'Loading cat...' : 'Get cat'}
+        <p className="text-third w-fit">{isLoading ? 'Loading...' : 'get cat'}</p>
       </button>
 
-      <Context.Provider value={{ images, setImages, tags, setTags }}>
-        <div className="w-[900px] h-full border-2 border-green-500 p-4 columns-3 ">
-          {imagesArray.length ? (
-            imagesArray.map((image) => <Card key={image.id} image={image} />)
-          ) : (
-            <div>no cats</div>
-          )}
-        </div>
-      </Context.Provider>
-    </>
-  )
-}
+      <div className="flex gap-2">
+        <button
+          className="w-fit disabled:opacity-25 bg-second font-bold py-1 px-2 rounded"
+          disabled={isLoading}
+          onClick={() =>
+            setImages(() => {
+              const storageImages: Image[] = Object.values(
+                JSON.parse(localStorage.getItem('images') || '[]')
+              )
 
-const Card = ({ image }: { image: Image }) => {
-  const [isModalVisible, setIsModalVisible] = useState(false)
+              const filteredArray = storageImages.filter((image: Image) => image.isLiked)
 
-  const { setImages } = useContext(Context)
+              if (filterSelectRef.current) {
+                filterSelectRef.current.value = 'filter by tag'
+              }
 
-  const handleLikeImage = useCallback(
-    () => likeImage({ id: image.id, setImages }),
-    [image.id, setImages]
-  )
-  const handleDeleteImage = useCallback(
-    () => deleteImage({ id: image.id, setImages }),
-    [image.id, setImages]
-  )
+              return filteredArray.reduce((acc, image) => {
+                acc[image.id] = image
+                return acc
+              }, {} as Images)
+            })
+          }
+        >
+          <p className="text-third w-fit">liked</p>
+        </button>
 
-  return (
-    <>
-      <div className={`relative mb-4`}>
-        <div className="opacity-0 hover:opacity-100 flex absolute flex-col h-full w-full gap-2 p-2 justify-between">
-          <div className="flex bg-white w-fit">
-            <button onClick={handleLikeImage} className="w-fit border-red-600 border-2">
-              {image.isLiked ? 'unlike' : 'like'}
-            </button>
-            <button onClick={handleDeleteImage} className="w-fit border-red-600 border-2">
-              delete
-            </button>
-          </div>
+        <button
+          className="w-fit disabled:opacity-25 bg-second font-bold py-1 px-2 rounded"
+          disabled={isLoading}
+          onClick={() => {
+            setImages(JSON.parse(localStorage.getItem('images') || '[]'))
 
-          <div className="bottom-0 border-gray-950 border-2 w-fit">
-            {image.tags.length
-              ? image.tags.map((tag) => (
-                  <span
-                    key={`display-${tag}`}
-                    className="bg-gray-200 rounded-full text-sm font-semibold text-gray-700"
-                  >
-                    #{tag}
-                  </span>
-                ))
-              : null}
+            if (filterSelectRef.current) {
+              filterSelectRef.current.value = 'filter by tag'
+            }
+          }}
+        >
+          <p className="text-third w-fit">all</p>
+        </button>
 
-            <button
-              className="px-2 bg-white"
-              onClick={() => setIsModalVisible((prev) => !prev)}
-            >
-              +
-            </button>
-          </div>
-        </div>
+        <select
+          ref={filterSelectRef}
+          onChange={(e) => {
+            const storageItems: Images = JSON.parse(
+              localStorage.getItem('images') || '[]'
+            )
 
-        <img className="w-full h-full" src={image?.url} alt="cat" />
-      </div>
+            setImages(() => {
+              const selectedTag = e.target.value
+              if (selectedTag === 'filter by tag') {
+                return JSON.parse(localStorage.getItem('images') || '[]')
+              }
+              const filteredArray = Object.values(storageItems).filter((image) =>
+                image.tags.includes(selectedTag)
+              )
 
-      <Modal isVisible={isModalVisible} setIsModalVisible={setIsModalVisible}>
-        <Tags image={image} />
-      </Modal>
-    </>
-  )
-}
+              const filteredImages = filteredArray.reduce((acc, image) => {
+                acc[image.id] = image
+                return acc
+              }, {} as Images)
 
-const Tags = ({ image }: { image: Image }) => {
-  const [inputValue, setInputValue] = useState('')
-
-  const { setImages, tags, setTags } = useContext(Context)
-
-  const handleAddTagToImage = (tag: string) => {
-    setImages((prevImages) => {
-      const updatedImages = { ...prevImages }
-      updatedImages[image.id].tags = !updatedImages[image.id].tags.includes(tag)
-        ? [...updatedImages[image.id].tags, tag]
-        : updatedImages[image.id].tags
-
-      localStorage.setItem('images', JSON.stringify(updatedImages))
-
-      return updatedImages
-    })
-  }
-
-  const handleRemoveTagFromImage = (tag: string) => {
-    setImages((prevImages) => {
-      const updatedImages = { ...prevImages }
-      updatedImages[image.id].tags = updatedImages[image.id].tags.filter(
-        (imageTag) => imageTag !== tag
-      )
-
-      localStorage.setItem('images', JSON.stringify(updatedImages))
-      return updatedImages
-    })
-  }
-
-  const handleAddNewTag = () => {
-    addTag({
-      tag: inputValue,
-      setTags,
-    })
-
-    setInputValue('')
-  }
-
-  return (
-    <div className="h-96 w-96 bg-white">
-      <div className="border-2 border-red-500">
-        <p>all tags</p>
-        {tags.length
-          ? tags
-              .filter((tag) => !image.tags.includes(tag))
-              .map((tag) => (
-                <div
-                  className="cursor-pointer"
-                  onClick={() => handleAddTagToImage(tag)}
-                  key={`all-${tag}`}
-                >
-                  <p>{tag}</p>
-                </div>
-              ))
-          : 'no tags'}
-        <div>
-          <input
-            className="bg-gray-300"
-            onChange={(e) => {
-              setInputValue(e.target.value)
-            }}
-            value={inputValue}
-          />
-          <button onClick={handleAddNewTag}>add new tag</button>
-        </div>
-      </div>
-
-      <div className="border-2 border-purple-500">
-        <p>image tags</p>
-
-        {image.tags.length
-          ? image.tags.map((tag) => (
-              <div
-                className="cursor-pointer"
-                onClick={() => handleRemoveTagFromImage(tag)}
-                key={`image-${tag}`}
-              >
-                <p>{tag}</p>
-              </div>
-            ))
-          : 'no tags'}
+              return filteredImages
+            })
+          }}
+        >
+          <option>filter by tag</option>
+          {tags.map((tag) => (
+            <option key={tag}>{tag}</option>
+          ))}
+        </select>
       </div>
     </div>
   )
 }
 
-const Context = createContext<{
-  images: Images
-  setImages: Dispatch<SetStateAction<Images>>
-  tags: string[]
-  setTags: Dispatch<SetStateAction<string[]>>
-}>({
+const NoResultsFallback = ({ storageImages }: { storageImages: Image[] }) => {
+  return (
+    <div className="w-full h-ful flex flex-col flex-grow items-center pt-5 gap-8 lg:gap-16">
+      <FaLongArrowAltUp className="text-second w-20 h-20" />
+      <FaPaw className="text-third w-20 h-20" />
+
+      <p className="text-varela text-second text-xl lg:text-3xl">
+        {storageImages.length
+          ? 'no cats found for this filter'
+          : "let's get some cats first"}
+      </p>
+    </div>
+  )
+}
+
+export const Context = createContext<ContextType>({
   images: {},
   setImages: () => [],
   tags: [],
   setTags: () => [],
+  selectedImageId: '',
+  setSelectedImageId: () => '',
+  setIsModalVisible: () => false,
+  setIsError: () => false,
+  isLoading: false,
+  setIsLoading: () => false,
 })
+
+type ContextType = {
+  images: Images
+  setImages: Dispatch<SetStateAction<Images>>
+  tags: string[]
+  setTags: Dispatch<SetStateAction<string[]>>
+  selectedImageId: string
+  setSelectedImageId: Dispatch<SetStateAction<string>>
+  setIsModalVisible: Dispatch<SetStateAction<boolean>>
+  setIsLoading: Dispatch<SetStateAction<boolean>>
+  isLoading: boolean
+  setIsError: Dispatch<SetStateAction<boolean>>
+}

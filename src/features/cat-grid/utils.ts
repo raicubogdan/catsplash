@@ -17,15 +17,19 @@ export const fetchImageFromApi = ({
 }) => {
   setIsLoading(true)
 
+  console.log('fetching from api')
+
   fetch(
     'https://api.thecatapi.com/v1/images/search?limit=1&mime_types=&order=Random&size=small&page=3&sub_id=demo-ce06ee'
   )
     .then((res) => res.json())
     .then((data: Images) => {
-      setImages((prev) => {
+      setImages(() => {
+        const parsed = JSON.parse(localStorage.getItem('images') || '{}')
+
         const updatedImages: Images = {
-          ...prev,
           [data[0].id]: { ...data[0], isLiked: false, tags: [] },
+          ...parsed,
         }
 
         localStorage.setItem('images', JSON.stringify(updatedImages))
@@ -66,24 +70,12 @@ export const deleteImage = ({ id, setImages }: UtilityFn) => {
       delete updatedImages[id]
     }
 
-    localStorage.setItem('images', JSON.stringify(updatedImages))
+    if (!Object.values(updatedImages).length) {
+      localStorage.removeItem('images')
+    } else {
+      localStorage.setItem('images', JSON.stringify(updatedImages))
+    }
 
     return updatedImages
-  })
-}
-
-export const addTag = ({
-  tag,
-  setTags,
-}: {
-  tag: string
-  setTags: Dispatch<SetStateAction<string[]>>
-}) => {
-  setTags((prev) => {
-    const updatedTags = !prev.includes(tag) ? [...prev, tag] : prev
-
-    localStorage.setItem('tags', JSON.stringify(updatedTags))
-
-    return updatedTags
   })
 }
