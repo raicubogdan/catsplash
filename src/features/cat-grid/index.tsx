@@ -28,7 +28,7 @@ export const CatGrid = () => {
   const imagesArray = Object.values(images)
 
   return (
-    <>
+    <div className="max-w-[1200px] w-full flex flex-col gap-4 items-center">
       {isError ? (
         <div className="text-red-700">
           Something went wrong! Contact the cat god for guidance
@@ -36,13 +36,11 @@ export const CatGrid = () => {
       ) : null}
 
       <button
-        className={`disabled:opacity-25 bg-second font-bold py-2 px-4 rounded`}
+        className="w-fit disabled:opacity-25 bg-second font-bold py-2 px-4 rounded"
         disabled={isLoading}
         onClick={() => fetchImageFromApi({ setImages, setIsLoading, setIsError })}
       >
-        <p className="text-third text-varela">
-          {isLoading ? 'Loading cat...' : 'get cat'}
-        </p>
+        <p className="text-third w-fit">{isLoading ? 'Loading cat...' : 'get cat'}</p>
       </button>
 
       <Context.Provider
@@ -57,7 +55,7 @@ export const CatGrid = () => {
         }}
       >
         {imagesArray.length ? (
-          <div className="max-w-[1200px] flex-grow w-full h-full py-4 columns-1 md:columns-2 lg:columns-3 ">
+          <div className="flex-grow w-full h-full py-4 columns-1 md:columns-2 lg:columns-3 ">
             {imagesArray.map((image) => (
               <Card key={image.id} image={image} />
             ))}
@@ -75,7 +73,7 @@ export const CatGrid = () => {
           <Tags />
         </Modal>
       </Context.Provider>
-    </>
+    </div>
   )
 }
 
@@ -177,7 +175,7 @@ const Tags = () => {
 
       <div className="w-full h-full flex flex-col gap-10 justify-between">
         <div className="flex flex-col gap-4 px-2 border-t-2 border-b-gray-400">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-2">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-2 py-2">
             <p className="text-2xl">Available tags</p>
 
             <div className="flex w-full lg:w-auto flex-col lg:flex-row gap-2 items-end">
@@ -216,7 +214,7 @@ const Tags = () => {
           </div>
         </div>
 
-        <div className="flex flex-col  max-h-[10rem] gap-4 px-2 border-t-2 border-b-gray-400">
+        <div className="flex flex-col  max-h-[10rem] gap-4 px-2 border-t-2 border-b-gray-400 py-2">
           <p className="text-2xl">Applied tags</p>
 
           <div className="w-full flex flex-wrap gap-2 overflow-y-scroll max-h-[8rem]">
@@ -230,7 +228,7 @@ const Tags = () => {
                     <p>{tag}</p>
                   </button>
                 ))
-              : 'no tags'}
+              : 'This image has no tags'}
           </div>
         </div>
       </div>
@@ -308,7 +306,7 @@ const Context = createContext<{
 
 export const Footer = () => {
   return (
-    <div className="bg-first h-[10vh] w-full mt-auto flex items-center justify-center font-varela text-second font-bold text-sm lg:text-base">
+    <div className="bg-first h-[10vh] w-full mt-auto flex items-center justify-center  text-second font-bold text-sm lg:text-base">
       <div className="whitespace-pre-line">
         made with
         {

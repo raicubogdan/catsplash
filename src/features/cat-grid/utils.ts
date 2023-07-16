@@ -66,7 +66,11 @@ export const deleteImage = ({ id, setImages }: UtilityFn) => {
       delete updatedImages[id]
     }
 
-    localStorage.setItem('images', JSON.stringify(updatedImages))
+    if (!Object.values(updatedImages).length) {
+      localStorage.removeItem('images')
+    } else {
+      localStorage.setItem('images', JSON.stringify(updatedImages))
+    }
 
     return updatedImages
   })

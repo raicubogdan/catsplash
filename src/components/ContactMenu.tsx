@@ -5,7 +5,7 @@ import { RxHamburgerMenu } from 'react-icons/rx'
 
 export const ContactMenu = () => {
   return (
-    <div className="hidden top-20 left-0 lg:fixed">
+    <div className="hidden lg:block top-20 left-0 fixed">
       <div className="flex flex-col">
         <div className="h-[5vmin] w-[5vmin] bg-second">
           <a href="https://github.com/raicubogdan" target="_blank">
@@ -26,21 +26,19 @@ export const ContactMenu = () => {
 export const ContactMenuMobile = () => {
   const [isMenuVisible, setIsMenuVisible] = useState(false)
 
-  console.log(isMenuVisible)
-
   return (
     <>
       <div className="fixed lg:hidden w-full flex justify-between items-center bg-first z-20 border-b-2 border-second">
-        <h1 className="font-varela text-second text-xl ml-4">catsplash</h1>
+        <h1 className="text-second text-xl ml-4">catsplash</h1>
 
         {isMenuVisible ? (
           <IoCloseOutline
-            className="w-8 h-8 text-second z-20 text-varela text-2xl font-bold m-2 rounded-lg right-2 cursor-pointer"
+            className="w-8 h-8 text-second z-20 text-2xl font-bold m-2 rounded-lg right-2 cursor-pointer"
             onClick={() => setIsMenuVisible(false)}
           />
         ) : (
           <RxHamburgerMenu
-            className="w-8 h-8 text-second z-20 text-varela text-2xl font-bold m-2 rounded-lg right-2 cursor-pointer"
+            className="w-8 h-8 text-second z-20 text-2xl font-bold m-2 rounded-lg right-2 cursor-pointer"
             onClick={() => setIsMenuVisible(true)}
           />
         )}
