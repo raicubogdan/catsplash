@@ -8,6 +8,10 @@ export const Tags = () => {
 
   const image = images[selectedImageId]
 
+  if (!image) {
+    return null
+  }
+
   return (
     <div className="w-full max-w-none lg:max-w-5xl lg:w-[50vw] min-h-[24rem] flex flex-col bg-fifth gap-2 p-2">
       <div className="w-full flex justify-end pr-2">
