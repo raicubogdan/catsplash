@@ -45,7 +45,7 @@ export const SocialMediaMenuMobile = () => {
       </div>
 
       {isMenuVisible && (
-        <div className="fixed h-[100vh] w-full z-10 backdrop-blur-lg flex flex-col items-center justify-end">
+        <div className="fixed h-[100vh] w-full z-10 backdrop-blur-lg flex flex-col items-center pt-10">
           <a
             className="h-[10vh] w-full bg-second p-4"
             href="https://github.com/raicubogdan"
