@@ -35,7 +35,7 @@ const ImageTags = ({ image }: { image: Image }) => {
   const { setImages } = useContext(Context)
 
   const handleRemoveTagFromImage = (tag: string) => {
-    const storageItems: Images = JSON.parse(localStorage.getItem('images') || '[]')
+    const storageItems: Images = JSON.parse(localStorage.getItem('images') || '{}')
 
     setImages((prevImages) => {
       console.log('storageItems', storageItems)
@@ -84,7 +84,7 @@ const AvailableTags = ({ image }: { image: Image }) => {
   const { setImages, setTags, tags } = useContext(Context)
 
   const handleAddTagToImage = (tag: string) => {
-    const storageItems: Images = JSON.parse(localStorage.getItem('images') || '[]')
+    const storageItems: Images = JSON.parse(localStorage.getItem('images') || '{}')
 
     setImages((prevImages) => {
       const updatedImages = { ...prevImages }
@@ -177,7 +177,7 @@ export const OnImageTags = ({ image }: { image: Image }) => {
   const { setSelectedImageId, setIsModalVisible, setImages } = useContext(Context)
 
   const handleRemoveTag = ({ tag }: { tag: string }) => {
-    const storageImages: Images = JSON.parse(localStorage.getItem('images') || '[]')
+    const storageImages: Images = JSON.parse(localStorage.getItem('images') || '{}')
 
     setImages((prevImages) => {
       const updatedImages = { ...prevImages }

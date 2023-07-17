@@ -20,7 +20,7 @@ export const CatGrid = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [isError, setIsError] = useState(false)
   const [images, setImages] = useState<Images>(
-    JSON.parse(localStorage.getItem('images') || '[]')
+    JSON.parse(localStorage.getItem('images') || '{}')
   )
   const [tags, setTags] = useState<string[]>(
     JSON.parse(localStorage.getItem('tags') || '[]')
@@ -31,7 +31,7 @@ export const CatGrid = () => {
   const filterSelectRef = useRef<HTMLSelectElement>(null)
 
   const storageImages: Image[] = Object.values(
-    JSON.parse(localStorage.getItem('images') || '[]')
+    JSON.parse(localStorage.getItem('images') || '{}')
   )
 
   return (
@@ -108,7 +108,7 @@ const CatGridButtons = ({
           onClick={() =>
             setImages(() => {
               const storageImages: Image[] = Object.values(
-                JSON.parse(localStorage.getItem('images') || '[]')
+                JSON.parse(localStorage.getItem('images') || '{}')
               )
 
               const filteredArray = storageImages.filter((image: Image) => image.isLiked)
@@ -131,7 +131,7 @@ const CatGridButtons = ({
           className="w-fit disabled:opacity-25 bg-second font-bold py-1 px-2 rounded"
           disabled={isLoading}
           onClick={() => {
-            setImages(JSON.parse(localStorage.getItem('images') || '[]'))
+            setImages(JSON.parse(localStorage.getItem('images') || '{}'))
 
             if (filterSelectRef.current) {
               filterSelectRef.current.value = 'filter by tag'
@@ -145,13 +145,13 @@ const CatGridButtons = ({
           ref={filterSelectRef}
           onChange={(e) => {
             const storageItems: Images = JSON.parse(
-              localStorage.getItem('images') || '[]'
+              localStorage.getItem('images') || '{}'
             )
 
             setImages(() => {
               const selectedTag = e.target.value
               if (selectedTag === 'filter by tag') {
-                return JSON.parse(localStorage.getItem('images') || '[]')
+                return JSON.parse(localStorage.getItem('images') || '{}')
               }
               const filteredArray = Object.values(storageItems).filter((image) =>
                 image.tags.includes(selectedTag)

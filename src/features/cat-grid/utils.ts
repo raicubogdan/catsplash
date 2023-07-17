@@ -46,6 +46,8 @@ export const fetchImageFromApi = ({
 }
 
 export const likeImage = ({ id, setImages }: UtilityFn) => {
+  const storageItems: Images = JSON.parse(localStorage.getItem('images') || '{}')
+
   setImages((prev) => {
     const updatedImages = { ...prev }
 
@@ -56,24 +58,32 @@ export const likeImage = ({ id, setImages }: UtilityFn) => {
       }
     }
 
-    localStorage.setItem('images', JSON.stringify(updatedImages))
+    console.log('updatedImages[id]', updatedImages[id])
+
+    localStorage.setItem(
+      'images',
+      JSON.stringify({ ...storageItems, [id]: updatedImages[id] })
+    )
 
     return updatedImages
   })
 }
 
 export const deleteImage = ({ id, setImages }: UtilityFn) => {
+  const storageItems: Images = JSON.parse(localStorage.getItem('images') || '{}')
+
   setImages((prev) => {
     const updatedImages = { ...prev }
 
     if (updatedImages[id]) {
       delete updatedImages[id]
+      delete storageItems[id]
     }
 
-    if (!Object.values(updatedImages).length) {
+    if (!Object.values(storageItems).length) {
       localStorage.removeItem('images')
     } else {
-      localStorage.setItem('images', JSON.stringify(updatedImages))
+      localStorage.setItem('images', JSON.stringify(storageItems))
     }
 
     return updatedImages
