@@ -15,6 +15,9 @@ import { Tags } from '../../components/Tags'
 import { Card } from '../../components/Card'
 
 export const CatGrid = () => {
+  // TODO: refactor this to use useReducer
+  // TODO: create separate branch for redux
+  // TODO: create separate branch for mobx
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [selectedImageId, setSelectedImageId] = useState('')
   const [isLoading, setIsLoading] = useState(false)
