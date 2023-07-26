@@ -1,12 +1,12 @@
 import { useContext, useState } from 'react'
 import { IoCloseOutline } from 'react-icons/io5'
-import { Images, Image } from '../features/cat-grid/types'
-import { Context } from '../features/cat-grid'
+import { Image, Images } from '../features/cat-grid/types'
+import { Context } from '../features/cat-grid/reducer/reducer'
 
-export const Tags = () => {
-  const { setIsModalVisible, selectedImageId, images } = useContext(Context)
+export const ModalTags = () => {
+  const { dispatch, state } = useContext(Context)
 
-  const image = images[selectedImageId]
+  const image = state.images[state.selectedImageId]
 
   if (!image) {
     return null
@@ -17,42 +17,49 @@ export const Tags = () => {
       <div className="w-full flex justify-end pr-2">
         <button
           className="justify-end bg-white"
-          onClick={() => setIsModalVisible((prev) => !prev)}
+          onClick={() =>
+            dispatch({
+              type: 'SET_IS_MODAL_VISIBLE',
+              payload: false,
+            })
+          }
         >
           <IoCloseOutline className="bg-red-400 rounded text-white" />
         </button>
       </div>
 
       <div className="w-full h-full flex flex-col gap-10 justify-between">
-        <AvailableTags image={image} />
-        <ImageTags image={image} />
+        <ModalAvailableTags image={image} />
+        <ModalImageTags image={image} />
       </div>
     </div>
   )
 }
 
-const ImageTags = ({ image }: { image: Image }) => {
-  const { setImages } = useContext(Context)
+const ModalImageTags = ({ image }: { image: Image }) => {
+  const { dispatch, state } = useContext(Context)
 
   const handleRemoveTagFromImage = (tag: string) => {
-    const storageItems: Images = JSON.parse(localStorage.getItem('images') || '{}')
+    const storageImages: Images = JSON.parse(
+      localStorage.getItem('state') || '{}'
+    ).images
 
-    setImages((prevImages) => {
-      console.log('storageItems', storageItems)
-      const updatedImages = { ...prevImages }
+    storageImages[image.id].tags = storageImages[image.id].tags.filter(
+      (imageTag) => imageTag !== tag
+    )
 
-      updatedImages[image.id].tags = updatedImages[image.id].tags.filter(
-        (imageTag) => imageTag !== tag
-      )
-
-      localStorage.setItem(
-        'images',
-        JSON.stringify({ ...storageItems, [image.id]: updatedImages[image.id] })
-      )
-
-      return updatedImages
+    dispatch({
+      type: 'SET_IMAGES',
+      payload: {
+        stateImages: {
+          ...state.images,
+          [image.id]: storageImages[image.id],
+        },
+        storageImages,
+      },
     })
   }
+
   return (
     <div className="flex flex-col  max-h-[10rem] gap-4 px-2 border-t-2 border-b-gray-400 py-2">
       <p className="text-2xl">Image tags</p>
@@ -62,10 +69,7 @@ const ImageTags = ({ image }: { image: Image }) => {
           ? image.tags.map((tag) => (
               <button
                 className="w-fit p-1 px-2 text-sm bg-gray-400 text-white rounded"
-                onClick={() => {
-                  handleRemoveTagFromImage(tag)
-                  console.log('removes')
-                }}
+                onClick={() => handleRemoveTagFromImage(tag)}
                 key={`image-${tag}`}
               >
                 <p>{tag}</p>
@@ -77,28 +81,27 @@ const ImageTags = ({ image }: { image: Image }) => {
   )
 }
 
-const AvailableTags = ({ image }: { image: Image }) => {
+const ModalAvailableTags = ({ image }: { image: Image }) => {
+  const { dispatch, state } = useContext(Context)
+
   const [inputValue, setInputValue] = useState('')
   const [error, setError] = useState('')
 
-  const { setImages, setTags, tags } = useContext(Context)
-
   const handleAddTagToImage = (tag: string) => {
-    const storageItems: Images = JSON.parse(localStorage.getItem('images') || '{}')
+    const storageImages = JSON.parse(
+      localStorage.getItem('state') || '{}'
+    ).images
 
-    setImages((prevImages) => {
-      const updatedImages = { ...prevImages }
+    storageImages[image.id].tags = !storageImages[image.id].tags.includes(tag)
+      ? [...storageImages[image.id].tags, tag]
+      : storageImages[image.id].tags
 
-      updatedImages[image.id].tags = !updatedImages[image.id].tags.includes(tag)
-        ? [...updatedImages[image.id].tags, tag]
-        : updatedImages[image.id].tags
-
-      localStorage.setItem(
-        'images',
-        JSON.stringify({ ...storageItems, [image.id]: updatedImages[image.id] })
-      )
-
-      return updatedImages
+    dispatch({
+      type: 'SET_IMAGES',
+      payload: {
+        stateImages: { ...state.images, [image.id]: storageImages[image.id] },
+        storageImages,
+      },
     })
   }
 
@@ -111,13 +114,11 @@ const AvailableTags = ({ image }: { image: Image }) => {
     }
 
     if (trimmedValue) {
-      setTags((prev) => {
-        const updatedTags = !prev.includes(inputValue) ? [inputValue, ...prev] : prev
+      const updatedTags = !state.tags.includes(inputValue)
+        ? [inputValue, ...state.tags]
+        : state.tags
 
-        localStorage.setItem('tags', JSON.stringify(updatedTags))
-
-        return updatedTags
-      })
+      dispatch({ type: 'SET_TAGS', payload: updatedTags })
     }
 
     setError('')
@@ -135,9 +136,7 @@ const AvailableTags = ({ image }: { image: Image }) => {
           <input
             placeholder="Type new tag"
             className=" w-full lg:w-auto bg-fifth border-b-2 border-green-600 focus:outline-none"
-            onChange={(e) => {
-              setInputValue(e.target.value)
-            }}
+            onChange={(e) => setInputValue(e.target.value)}
             value={inputValue}
           />
 
@@ -151,8 +150,8 @@ const AvailableTags = ({ image }: { image: Image }) => {
       </div>
 
       <div className="w-full flex flex-wrap gap-2 overflow-y-scroll max-h-[8rem]">
-        {tags.length
-          ? tags
+        {state.tags.length
+          ? state.tags
               .filter((tag) => !image.tags.includes(tag))
               .map((tag) => (
                 <button
@@ -165,44 +164,53 @@ const AvailableTags = ({ image }: { image: Image }) => {
                   <p>{tag}</p>
                 </button>
               ))
-          : 'no tags'}
+          : 'no available tags'}
       </div>
     </div>
   )
 }
 
-export const OnImageTags = ({ image }: { image: Image }) => {
-  const numberOfDisplayedTags = 5
-
-  const { setSelectedImageId, setIsModalVisible, setImages } = useContext(Context)
+export const OnImageTags = ({
+  image,
+  numberOfDisplayedTags,
+}: {
+  image: Image
+  numberOfDisplayedTags: number
+}) => {
+  const { dispatch, state } = useContext(Context)
 
   const handleRemoveTag = ({ tag }: { tag: string }) => {
-    const storageImages: Images = JSON.parse(localStorage.getItem('images') || '{}')
+    const storageImages: Images = JSON.parse(
+      localStorage.getItem('state') || '{}'
+    ).images
 
-    setImages((prevImages) => {
-      const updatedImages = { ...prevImages }
-      updatedImages[image.id].tags = updatedImages[image.id].tags.filter(
-        (imageTag) => imageTag !== tag
-      )
+    storageImages[image.id].tags = storageImages[image.id].tags.filter(
+      (imageTag) => imageTag !== tag
+    )
 
-      localStorage.setItem(
-        'images',
-        JSON.stringify({
-          ...storageImages,
-          [image.id]: updatedImages[image.id],
-        })
-      )
-      return updatedImages
+    dispatch({
+      type: 'SET_IMAGES',
+      payload: {
+        stateImages: { ...state.images, [image.id]: storageImages[image.id] },
+        storageImages,
+      },
     })
   }
 
   return (
-    <div className="bottom-0 w-full flex-wrap flex gap-2 backdrop-blur-md p-2">
+    <div className="bottom-0 w-full flex-wrap flex gap-2 backdrop-blur-md md:p-2">
       <button
         className="p-1 px-2 text-xs bg-gradient-to-r border-2 border-second from-purple-800 to-purple-600 text-second font-bold rounded cursor-pointer"
-        onClick={(e) => {
-          setIsModalVisible((prev) => !prev)
-          setSelectedImageId(image.id)
+        onClick={() => {
+          dispatch({
+            type: 'SET_IS_MODAL_VISIBLE',
+            payload: true,
+          })
+
+          dispatch({
+            type: 'SET_SELECTED_IMAGE_ID',
+            payload: image.id,
+          })
         }}
       >
         TAGS

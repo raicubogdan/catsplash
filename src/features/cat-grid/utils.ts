@@ -1,91 +1,93 @@
 import { Dispatch, SetStateAction } from 'react'
 import { Images } from './types'
+import { ActionType, StateType } from './reducer/types'
 
-type UtilityFn = {
+type ImageState = {
   id: string
-  setImages: Dispatch<SetStateAction<Images>>
+  dispatch: Dispatch<ActionType>
+  state: StateType
 }
 
 export const fetchImageFromApi = ({
-  setImages,
+  dispatch,
   setIsLoading,
-  setIsError,
 }: {
-  setImages: Dispatch<SetStateAction<Images>>
+  dispatch: Dispatch<ActionType>
   setIsLoading: Dispatch<SetStateAction<boolean>>
-  setIsError: Dispatch<SetStateAction<boolean>>
 }) => {
   setIsLoading(true)
-
-  console.log('fetching from api')
 
   fetch(
     'https://api.thecatapi.com/v1/images/search?limit=1&mime_types=&order=Random&size=small&page=3&sub_id=demo-ce06ee'
   )
     .then((res) => res.json())
     .then((data: Images) => {
-      setImages(() => {
-        const parsed = JSON.parse(localStorage.getItem('images') || '{}')
+      const storageImages = JSON.parse(
+        localStorage.getItem('state') || '{}'
+      ).images
 
-        const updatedImages: Images = {
-          [data[0].id]: { ...data[0], isLiked: false, tags: [] },
-          ...parsed,
-        }
+      const updatedImages: Images = {
+        [data[0].id]: { ...data[0], isLiked: false, tags: [] },
+        ...storageImages,
+      }
 
-        localStorage.setItem('images', JSON.stringify(updatedImages))
+      setIsLoading(false)
 
-        setIsLoading(false)
-
-        return updatedImages
+      dispatch({
+        type: 'SET_IMAGES',
+        payload: { storageImages: updatedImages, stateImages: updatedImages },
       })
     })
     .catch((err) => {
-      setIsError(true)
-      console.log(err)
+      dispatch({
+        type: 'SET_IS_ERROR',
+        payload: err,
+      })
+
+      setIsLoading(false)
     })
 }
 
-export const likeImage = ({ id, setImages }: UtilityFn) => {
-  const storageItems: Images = JSON.parse(localStorage.getItem('images') || '{}')
+export const likeImage = ({ id, dispatch, state }: ImageState) => {
+  const storageImages: Images = JSON.parse(
+    localStorage.getItem('state') || '{}'
+  ).images
 
-  setImages((prev) => {
-    const updatedImages = { ...prev }
-
-    if (updatedImages[id]) {
-      updatedImages[id] = {
-        ...updatedImages[id],
-        isLiked: !updatedImages[id].isLiked,
-      }
+  if (storageImages[id]) {
+    storageImages[id] = {
+      ...storageImages[id],
+      isLiked: !storageImages[id].isLiked,
     }
+  }
 
-    console.log('updatedImages[id]', updatedImages[id])
+  localStorage.setItem(
+    'images',
+    JSON.stringify({ ...storageImages, [id]: storageImages[id] })
+  )
 
-    localStorage.setItem(
-      'images',
-      JSON.stringify({ ...storageItems, [id]: updatedImages[id] })
-    )
-
-    return updatedImages
+  dispatch({
+    type: 'SET_IMAGES',
+    payload: {
+      storageImages: storageImages,
+      stateImages: { ...state.images, [id]: storageImages[id] },
+    },
   })
 }
 
-export const deleteImage = ({ id, setImages }: UtilityFn) => {
-  const storageItems: Images = JSON.parse(localStorage.getItem('images') || '{}')
+export const deleteImage = ({ id, dispatch, state }: ImageState) => {
+  const storageImages: Images = JSON.parse(
+    localStorage.getItem('state') || '{}'
+  ).images
 
-  setImages((prev) => {
-    const updatedImages = { ...prev }
+  const updatedImages = { ...state.images }
 
-    if (updatedImages[id]) {
-      delete updatedImages[id]
-      delete storageItems[id]
-    }
+  if (storageImages[id]) {
+    delete storageImages[id]
+    delete updatedImages[id]
+  }
 
-    if (!Object.values(storageItems).length) {
-      localStorage.removeItem('images')
-    } else {
-      localStorage.setItem('images', JSON.stringify(storageItems))
-    }
-
-    return updatedImages
+  dispatch({
+    type: 'SET_IMAGES',
+    payload: { storageImages: storageImages, stateImages: updatedImages },
   })
 }
